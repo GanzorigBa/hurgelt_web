@@ -15,7 +15,7 @@ const AddInvoiceModal = ({ handleCancel, handleOk, open, data }: any) => {
   const invoice_products = Form.useWatch("invoice_products", registerform);
   const type = Form.useWatch("type", registerform);
   const submitHanlde = async (values: any) => {
-    if (values?.from_user == values?.to_user)
+    if (values?.from_user == values?.to_user && type != "Орлого")
       return toast.warning("Ижил хэрэглэгч сонгосон байна!!!");
     if (!loading) {
       setloading(true);
