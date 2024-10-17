@@ -519,7 +519,7 @@ const UldegdelPage = () => {
                           className="m-0 bg-white"
                           name={"jolooch"}
                           level={[3, 4]}
-                          isbugd={true}
+                          isbugd={"true"}
                         />
                       </Form>
                     </div>

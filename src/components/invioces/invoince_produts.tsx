@@ -132,6 +132,11 @@ const InvoiceProdutsModal = ({
           "email": data?.from_user?.email,
           "phone": data?.from_user?.phone,
           "role": data?.from_user?.role,
+          "zone":data?.from_user?.zone, 
+          "duureg":data?.from_user?.duureg,
+          "car_mark":data?.from_user?.car_mark,
+          "car_number":data?.from_user?.car_number,
+          "car_desc":data?.from_user?.car_desc
         }),
         prod : data?.invoice_product
       }} handleOk={()=>{

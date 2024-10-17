@@ -26,7 +26,7 @@ const SelectPadaanUserWidget = (props?: any) => {
           if (val?.["status"] === 200) {
             const list = val?.data?.data;
             var temp: any[] = [];
-            if (props?.isbugd) {
+            if (props?.isbugd =="true") {
               temp.push({
                 value: "isBugd",
                 label: "Бүгд",

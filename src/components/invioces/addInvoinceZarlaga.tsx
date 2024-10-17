@@ -31,7 +31,6 @@ const AddInvoiceZarlagaCopyModal = ({
   const router = useRouter();
   const [registerform] = Form.useForm();
   const { userContent } = useData();
-  const [totalCnt, settotalCnt] = useState(0);
   const [loading, setloading] = useState(false);
   const invoice_products = Form.useWatch("invoice_products", registerform);
   const type = Form.useWatch("type", registerform);
@@ -90,7 +89,6 @@ const AddInvoiceZarlagaCopyModal = ({
             owner: userContent?._id,
             owner_name: userContent?.username,
             type: values?.type,
-            invoice_products: invoice_products,
             invoice_product: invoice_products?.map((e: any) => {
               const item = JSON.parse(e?.product);
               return {
@@ -158,7 +156,7 @@ const AddInvoiceZarlagaCopyModal = ({
         });
     }
   };
-
+console.log(toUser)
   useEffect(() => {
     registerform.setFieldsValue({
       type: "Зарлага",

@@ -62,11 +62,6 @@ const SelectJoloochIdWidget = (props?: any) => {
           setsearchjolooch(input?.toLowerCase());
           return option?.label;
         }}
-        // filterSort={(optionA, optionB) =>
-        //   (optionA?.label ?? "")
-        //     .toLowerCase()
-        //     .localeCompare((optionB?.label ?? "").toLowerCase())
-        // }
       />
     </Form.Item>
   );
