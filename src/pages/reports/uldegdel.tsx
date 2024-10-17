@@ -1,3 +1,4 @@
+import AddInvoiceHudulguunTootsooModal from "@/components/invioces/addInvoinceHudulguun";
 import SelectProductWidget from "@/components/select_product";
 import SelectPadaanUserWidget from "@/components/select_userpadaan";
 import EditUldeglModal from "@/components/uldegdel/editUldegdel";
@@ -34,7 +35,7 @@ const UldegdelPage = () => {
   const [totalcnt2, settotalcnt2] = useState(0);
   const [undsenform] = Form.useForm();
   const [baraform] = Form.useForm();
-
+  const [openHudulguun, setOpenHudulguun] = useState(false);
   const joloochId = Form.useWatch("jolooch", undsenform);
   const prodId = Form.useWatch("baraa", baraform);
   const [selectedItem, setselectedItem] = useState<any>(null);
@@ -490,6 +491,16 @@ const UldegdelPage = () => {
   ];
   return (
     <div className="w-full ">
+      <AddInvoiceHudulguunTootsooModal open={openHudulguun} data={
+        {joloochId : joloochId, 
+          prod : tootsooUldegdel
+        }
+      } handleCancel={()=>{
+        setOpenHudulguun(false);
+      }} handleOk={()=>{
+        setOpenHudulguun(false);
+        getData();
+      }}/>
       <Tabs
         defaultActiveKey="1"
         type="card"
@@ -508,13 +519,14 @@ const UldegdelPage = () => {
                           className="m-0 bg-white"
                           name={"jolooch"}
                           level={[3, 4]}
-                          isBugd={true}
+                          isbugd={true}
                         />
                       </Form>
                     </div>
                     {joloochId != "isBugd" && (
                       <Button
                         disabled={!joloochId || tableData?.length == 0}
+                        className={` ${tootsooUldegdel?.length == 0 ? "bg-green-300" : ""}`}
                         onClick={showModal}
                       >
                         {" "}
@@ -556,6 +568,15 @@ const UldegdelPage = () => {
                           );
                         })}
                       </div>
+                      {tootsooUldegdel?.length > 0 && (
+                        <Button className="bg-slate-500 text-white mt-3" onClick={()=>{
+                          handleCancel();
+
+                          setOpenHudulguun(true);
+                        }}>
+                          Хөдөлгөөнөөр татах
+                        </Button>
+                      )}
                     </Modal>
                   </div>
                 </div>

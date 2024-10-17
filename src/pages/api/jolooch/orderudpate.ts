@@ -45,7 +45,6 @@ export default async function handler(
         isPaid: payment_date,
         payment_type: type ? paymentType : null,
         completedDate: new Date(),
-        order_product: order_product ?? [],
         isCompleted: true,
         completeTailbar: tailbar,
         status: type ? "Хүргэгдсэн" : "Цуцлагдсан",
@@ -53,18 +52,6 @@ export default async function handler(
       if (payment_date && payment_date == true) {
         body.payment_date = new Date();
       }
-      var newtotal_sale_price = order_product.reduce(
-        (a: number, b: any) => a + b?.sale_price * b?.too,
-        0
-      );
-      var newdelivery_total_price = order_product.reduce(
-        (a: number, b: any) => a + b?.delivery_price * b?.too,
-        0
-      );
-      body.too = order_product.reduce((a: number, b: any) => a + b?.too, 0);
-      body.total_price = newtotal_sale_price + newdelivery_total_price;
-      body.total_sale_price = newtotal_sale_price;
-      body.delivery_total_price = newdelivery_total_price;
       const order = await OrderModel.findByIdAndUpdate(id, body, {
         new: true,
       }).populate([

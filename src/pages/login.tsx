@@ -43,44 +43,50 @@ const Login = () => {
   const login = async (val: any) => {
     if (!submitting) {
       setSubmitting(true);
-      const res: any = await axiosInstance.post("/auth/login", {
+      await axiosInstance.post("/auth/login", {
         username: val?.username,
         password: val?.password,
         device_token: fcmToken,
-      });
-      if (res.status === 200 && res?.data?.login) {
-        if (!res.data?.data) {
-          toast.warn("Хэрэглэгч бүртгэлгүй байна!!!");
-          return;
-        }
-        if (res?.data?.user?.level == 3) {
-          toast.error("Жолоочын эрхээр нэвтрэх боломжгүй!!!");
-          setSubmitting(false);
-          return;
+      }).then(async(res)=>{
+        if (res.status === 200 && res?.data?.login) {
+          if (!res.data?.data) {
+            toast.warn("Хэрэглэгч бүртгэлгүй байна!!!");
+            return;
+          }
+          if (res?.data?.user?.level == 3) {
+            toast.error("Жолоочын эрхээр нэвтрэх боломжгүй!!!");
+            setSubmitting(false);
+            return;
+          } else {
+            setAxiosBearerToken(res?.data?.data);
+            setCookie("accessToken", res?.data?.data, { maxAge: 36000000 });
+            await signIn("credentials", {
+              redirect: false,
+              username: val?.username,
+              password: val?.password,
+              callbackUrl: `/login`,
+            });
+  
+            update({ user: res?.data?.data });
+            localStorage.setItem("token", JSON.stringify(res?.data?.data));
+            messageApi.open({
+              type: "success",
+              content: "Тавтай морил.",
+            });
+            router.push("/");
+          }
         } else {
-          setAxiosBearerToken(res?.data?.data);
-          setCookie("accessToken", res?.data?.data, { maxAge: 36000000 });
-          await signIn("credentials", {
-            redirect: false,
-            username: val?.username,
-            password: val?.password,
-            callbackUrl: `/login`,
-          });
-
-          update({ user: res?.data?.data });
-          localStorage.setItem("token", JSON.stringify(res?.data?.data));
+          setSubmitting(false);
           messageApi.open({
-            type: "success",
-            content: "Тавтай морил.",
+            type: "warning",
+            content: "Хэрэглэгчийн нэр эсвэл Нууц үг буруу байна!",
           });
-          router.push("/");
         }
-      } else {
-        messageApi.open({
-          type: "warning",
-          content: "Хэрэглэгчийн нэр эсвэл Нууц үг буруу байна!",
-        });
-      }
+      }).catch((e)=>{
+         
+      setSubmitting(false);
+      });
+      
       setSubmitting(false);
     }
   };
