@@ -250,7 +250,15 @@ const EditOrderModal = ({
           ? data?.order_product.map((item: any) => {
               return {
                 too: item?.too,
-                product: JSON.stringify(item?.product),
+                product: JSON.stringify(
+                  {
+                    _id: item?.product?._id,
+                    code: item?.product?.code,
+                    name: item?.product?.name,
+                    price: item?.product?.price,
+                    delivery_price: item?.product?.delivery_price,
+                  }
+                  ),
               };
             })
           : [],

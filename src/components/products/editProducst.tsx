@@ -11,6 +11,18 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 
+interface ProductFormValues {
+  code: string;
+  name: string;
+  tailbar?: string;
+  image?: string;
+  price: number;
+  delivery_price: number;
+  balance: number;
+  category?: string;
+  isActive: boolean;
+}
+
 const EditProductModal = ({ handleCancel, handleOk, open, data }: any) => {
   const [editForm] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
@@ -18,48 +30,51 @@ const EditProductModal = ({ handleCancel, handleOk, open, data }: any) => {
 
   useEffect(() => {
     editForm.setFieldsValue({
-      code: data?.code,
-      name: data?.name,
-      tailbar: data?.tailbar,
-      image: data?.image,
+      code: data?.code?.trim(),
+      name: data?.name?.trim(),
+      tailbar: data?.tailbar?.trim(),
+      image: data?.image?.trim(),
       price: data?.price,
-
       delivery_price: data?.delivery_price,
       balance: data?.balance,
-      category: data?.category,
+      category: data?.category?.trim() ?? "Үндсэн",
       isActive: data?.isActive,
     });
-    return () => {};
   }, [data]);
 
   const price = Form.useWatch("price", editForm) ?? 0;
   const dprice = Form.useWatch("delivery_price", editForm) ?? 0;
 
-  const submitHanlde = async (values: any) => {
+  const submitHanlde = async (values: ProductFormValues) => {
     if (!loading) {
       setloading(true);
+
+      if (!values.code?.trim() || !values.name?.trim()) {
+        messageApi.error('Шаардлагатай талбаруудыг бөглөнө үү');
+        return;
+      }
+
+      const trimmedValues = {
+        id: data?._id,
+        code: values.code?.trim(),
+        name: values.name?.trim(),
+        tailbar: values.tailbar?.trim() ?? "",
+        image: values.image?.trim(),
+        price: values.price ?? 0,
+        delivery_price: values.delivery_price ?? 0,
+        balance: values.balance ?? 0,
+        total_price: price + dprice,
+        category: values.category?.trim() ?? "Үндсэн",
+        isActive: values.isActive,
+      };
+
       axiosInstance
         .post("/products/update", {
-          body: {
-            id: data?._id,
-            code: values?.code,
-            name: values?.name,
-            tailbar: values?.tailbar,
-            image: values?.image,
-            price: values?.price,
-            delivery_price: values?.delivery_price,
-            balance: values?.balance,
-            total_price: price + dprice,
-            category: values?.category,
-            isActive: values?.isActive,
-          },
+          body: trimmedValues,
         })
         .then((response) => {
           if (response?.["status"] === 200) {
             editForm.resetFields();
-            editForm.setFieldsValue({
-              role: "жолооч 3",
-            });
             handleOk();
           } else {
             messageApi.open({
@@ -69,14 +84,10 @@ const EditProductModal = ({ handleCancel, handleOk, open, data }: any) => {
           }
         })
         .catch((e: any) => {
-          console.log(e);
-
+          console.error("[ERROR][editProduct]:", e);
           messageApi.open({
             type: "error",
-            content:
-              "Алдаа! " +
-              JSON.stringify(e?.response?.data?.message) +
-              e?.response?.data?.message?.message,
+            content: "Алдаа! " + (e?.response?.data?.message ?? "Тодорхойгүй алдаа"),
           });
         })
         .finally(() => {
@@ -92,12 +103,9 @@ const EditProductModal = ({ handleCancel, handleOk, open, data }: any) => {
       confirmLoading={loading}
       destroyOnClose
       style={{ maxWidth: "100vw !important" }}
-      className="items-center  !m-0 text-blue-950"
+      className="items-center !m-0 text-blue-950"
       onCancel={() => {
         editForm.resetFields();
-        editForm.setFieldsValue({
-          role: "жолооч 3",
-        });
         handleCancel();
       }}
       centered
@@ -110,18 +118,24 @@ const EditProductModal = ({ handleCancel, handleOk, open, data }: any) => {
           Барааны мэдээлэл засах
         </p>
         <Form labelCol={{ span: 7 }} form={editForm} onFinish={submitHanlde}>
-          <div className="flex flex-col ">
+          <div className="flex flex-col">
             <Form.Item
               name={"code"}
               label="Барааны код"
-              rules={[{ required: true, message: "" }]}
+              rules={[
+                { required: true, message: "Код оруулна уу" },
+                { pattern: /^\S*$/, message: "Хоосон зай ашиглах боломжгүй" }
+              ]}
             >
               <Input />
             </Form.Item>
             <Form.Item
               name={"name"}
               label="Барааны нэр"
-              rules={[{ required: true, message: "" }]}
+              rules={[
+                { required: true, message: "Нэр оруулна уу" },
+                { whitespace: true, message: "Хоосон зай ашиглах боломжгүй" }
+              ]}
             >
               <Input />
             </Form.Item>
@@ -168,7 +182,7 @@ const EditProductModal = ({ handleCancel, handleOk, open, data }: any) => {
           </Button>
           <Button
             loading={loading}
-            className="w-1/2 px-1 hover:text-green-900 hover:bg-white bg-green-900  text-white"
+            className="w-1/2 px-1 hover:text-green-900 hover:bg-white bg-green-900 text-white"
             onClick={editForm.submit}
             htmlType="submit"
           >
@@ -179,4 +193,5 @@ const EditProductModal = ({ handleCancel, handleOk, open, data }: any) => {
     </Modal>
   );
 };
+
 export default EditProductModal;

@@ -5,122 +5,118 @@ import ProductModel from "@/models/products.model";
 import UserBalancesModel from "@/models/usersbalance.model";
 import { NextApiRequest, NextApiResponse } from "next";
 import NextCors from "nextjs-cors";
+import mongoose from "mongoose";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  await NextCors(req, res, {
-    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
-    origin: "*",
-    Headers: ["Authorization", "Content-Type"],
-    optionsSuccessStatus: 200,
-  });
-  if (req.method !== "POST") {
-    res.status(405).send({ message: "Only POST requests allowed" });
-    return;
-  }
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    let {
-      id,
-      type,
-      paymentType,
-      tailbar,
-      payment_date,
-      newList,
-      oldList,
-      order_product,
-    } = req.body;
-    console.log("orderupdate:::::", req.body);
-    await dbConnect();
-    if (id) {
-      const oldDataOrder = await OrderModel.findById(id, {
-        select: { isCompleted: 1 },
-      });
-      if (oldDataOrder?.isCompleted && oldDataOrder?.isCompleted == true) {
-        res.status(200).json({ result: true, message: "Амжилттай хадгалсан." });
-        return;
-      }
-      let body: any = {
-        isPaid: payment_date,
-        payment_type: type ? paymentType : null,
-        completedDate: new Date(),
-        isCompleted: true,
-        completeTailbar: tailbar,
-        status: type ? "Хүргэгдсэн" : "Цуцлагдсан",
-      };
-      if (payment_date && payment_date == true) {
-        body.payment_date = new Date();
-      }
-      const order = await OrderModel.findByIdAndUpdate(id, body, {
-        new: true,
-      }).populate([
-        {
-          path: "order_product",
-          populate: {
-            path: "product",
-            model: ProductModel,
-          },
-        },
-      ]);
-      if (
-        type != null &&
-        type == true &&
-        order.status == "Хүргэгдсэн" &&
-        order.isToolson != true
-      ) {
-        // console.log("userbalance hasna:::", type);
-        if (order && order?.order_product) {
-          for (let index = 0; index < order?.order_product.length; index++) {
-            try {
-              const element = order?.order_product[index];
-              const newdd = await UserBalancesModel.findOneAndUpdate(
-                {
-                  owner: order?.jolooch,
-                  username: order?.jolooch_username,
-                  product: element.product,
-                  product_code: element.product_code,
-                },
-                {
-                  owner: order?.jolooch,
-                  username: order?.jolooch_username,
-                  product: element.product,
-                  product_code: element.product_code,
-                  product_name: element.product_name,
-                  $inc: {
-                    hurgegdsen: element?.too ?? 0,
-                  },
-                },
-                { upsert: true, new: true }
-              );
-            } catch (e) {
-              console.log(
-                "[ERROR][orderupdate] UserBalancesModel.findOneAndUpdate :::: ",
-                e
-              );
-            }
-          }
-          await OrderModel.findByIdAndUpdate(id, { isToolson: true });
-        }
-      } else {
-        sendNotificationfirebaseLevel({
-          level: [0, 1],
-          title: `${order.jolooch_username} -жолооч  (${order?.order_number})дугаартай захиалгыг цуцлав.`,
-          body: `Захиалагчын утас: ${
-            order?.customer_phone
-          }, Бараа: ${order.order_product
-            .map((item: any) => {
-              return `(${item.product_name}-${item.too}ш)`;
-            })
-            .join(", ")} `,
-          isNotif: "isNotif",
-          datafile: {},
-        });
-      }
-      res.status(200).json({ result: true, message: "Амжилттай хадгалсан." });
+    await NextCors(req, res, {
+      methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+      origin: "*",
+      Headers: ["Authorization", "Content-Type"],
+      optionsSuccessStatus: 200,
+    });
+    if (req.method !== "POST") {
+      return res.status(405).json({ message: "Only POST requests allowed" });
     }
-    res.status(200).json({ result: false, message: "id not found" });
+    const { id, type, paymentType, tailbar, payment_date } = req.body;
+    if (!id) {
+      return res.status(400).json({ result: false, message: "ID is required" });
+    }
+    await dbConnect();
+    const oldDataOrder = await OrderModel.findById(id, {
+      isCompleted: 1,
+    }).session(session);
+    if (oldDataOrder?.isCompleted) {
+      await session.abortTransaction();
+      return res
+        .status(200)
+        .json({ result: true, message: "Амжилттай хадгалсан." });
+    }
+    const updateBody = {
+      isPaid: payment_date,
+      payment_type: type ? paymentType : null,
+      completedDate: new Date(),
+      isCompleted: true,
+      completeTailbar: tailbar,
+      status: type ? "Хүргэгдсэн" : "Цуцлагдсан",
+      ...(payment_date && { payment_date: new Date() }),
+    };
+    const order = await OrderModel.findByIdAndUpdate(id, updateBody, {
+      new: true,
+      session,
+    }).populate([
+      {
+        path: "order_product",
+        populate: {
+          path: "product",
+          model: ProductModel,
+        },
+      },
+    ]);
+    if (type && order.status === "Хүргэгдсэн" && !order.isToolson) {
+      await updateDriverBalance(order, session);
+      await OrderModel.findByIdAndUpdate(id, { isToolson: true }, { session });
+    } else {
+      await sendOrderCancelNotification(order);
+    }
+    await session.commitTransaction();
+    return res
+      .status(200)
+      .json({ result: true, message: "Амжилттай хадгалсан." });
   } catch (error) {
-    res.status(400).json({ result: false, message: error });
+    await session.abortTransaction();
+    console.error("[ERROR][orderupdate]:", error);
+    return res.status(400).json({
+      result: false,
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    });
+  } finally {
+    session.endSession();
   }
+}
+async function updateDriverBalance(
+  order: any,
+  session: mongoose.ClientSession
+) {
+  for (const element of order?.order_product) {
+    try {
+      await UserBalancesModel.findOneAndUpdate(
+        {
+          owner: order?.jolooch,
+          product: element.product,
+        },
+        {
+          owner: order?.jolooch,
+          username: order?.jolooch_username,
+          product: element.product,
+          product_code: element.product_code,
+          product_name: element.product_name,
+          $inc: { hurgegdsen: element?.too ?? 0 },
+        },
+        { upsert: true, new: true, session }
+      );
+    } catch (error) {
+      console.error("[ERROR][updateDriverBalance]:", error);
+      throw error;
+    }
+  }
+}
+async function sendOrderCancelNotification(order: any) {
+  const productList = order.order_product
+    .map((item: any) => `(${item.product_name}-${item.too}ш)`)
+    .join(", ");
+  await sendNotificationfirebaseLevel({
+    level: [0, 1],
+    title: `${order.jolooch_username} -жолооч  (${order?.order_number})дугаартай захиалгыг цуцлав.`,
+    body: `Захиалагчын утас: ${order?.customer_phone}, Бараа: ${productList}`,
+    isNotif: "isNotif",
+    datafile: {},
+  });
 }

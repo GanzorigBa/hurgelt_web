@@ -26,7 +26,13 @@ const SelectProductWidget = (props?: any) => {
             var temp: any[] = [];
             list.map((e: any) => {
               temp.push({
-                value: JSON.stringify(e),
+                value: JSON.stringify({
+                  _id:e._id,
+                  code: e.code,
+                  name: e.name,
+                  price: e.price,
+                  delivery_price: e.delivery_price,
+                }),
                 label:
                   e?.name.toString() +
                   " - (" +

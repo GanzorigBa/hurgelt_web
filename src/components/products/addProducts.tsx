@@ -2,6 +2,18 @@ import axiosInstance from "@/lib/axios";
 import { Button, Form, Input, InputNumber, Modal, Switch, message } from "antd";
 import { useEffect, useState } from "react";
 
+interface ProductFormValues {
+  code: string;
+  name: string;
+  tailbar?: string;
+  image?: string;
+  price: number;
+  delivery_price: number;
+  balance: number;
+  category?: string;
+  isActive: boolean;
+}
+
 const AddProductModal = ({ handleCancel, handleOk, open }: any) => {
   const [addProductForm] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
@@ -10,23 +22,29 @@ const AddProductModal = ({ handleCancel, handleOk, open }: any) => {
   const price = Form.useWatch("price", addProductForm) ?? 0;
   const dprice = Form.useWatch("delivery_price", addProductForm) ?? 0;
 
-  const submitHanlde = async (values: any) => {
+  const submitHanlde = async (values: ProductFormValues) => {
     if (!loading) {
       setloading(true);
+      if (!values.code.trim() || !values.name.trim()) {
+        messageApi.error('Шаардлагатай талбаруудыг бөглөнө үү');
+        return;
+      }
+      const trimmedValues = {
+        code: values?.code?.trim(),
+        name: values?.name?.trim() ?? "",
+        tailbar: values?.tailbar?.trim() ?? "",
+        image: values?.image?.trim(),
+        price: values?.price ?? 0,
+        delivery_price: values?.delivery_price ?? 0,
+        balance: values?.balance ?? 0,
+        total_price: price + dprice,
+        category: values?.category?.trim() ?? "Үндсэн",
+        isActive: values?.isActive,
+      };
+
       axiosInstance
         .post("/products/register", {
-          body: {
-            code: values?.code,
-            name: values?.name ?? "",
-            tailbar: values?.tailbar,
-            image: values?.image,
-            price: values?.price ?? 0,
-            delivery_price: values?.delivery_price ?? 0,
-            balance: values?.balance ?? 0,
-            total_price: price + dprice,
-            category: values?.category,
-            isActive: values?.isActive,
-          },
+          body: trimmedValues,
         })
         .then((response) => {
           if (response?.["status"] === 200) {
@@ -99,7 +117,10 @@ const AddProductModal = ({ handleCancel, handleOk, open }: any) => {
           <Form.Item
             name={"code"}
             label="Барааны код"
-            rules={[{ required: true, message: "" }]}
+            rules={[
+              { required: true, message: "Код оруулна уу" },
+              { pattern: /^\S*$/, message: "Хоосон зай ашиглах боломжгүй" }
+            ]}
           >
             <Input />
           </Form.Item>
