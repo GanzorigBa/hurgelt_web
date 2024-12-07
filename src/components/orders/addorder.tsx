@@ -53,7 +53,7 @@ const AddOrderModal = ({ handleCancel, handleOk, getDataReset, open }: any) => {
       const temp = order_products?.reduce((a: number, b: any) => {
         const prod = b?.product ? JSON.parse(b?.product) : {};
         return (
-          a + ((prod?.price ?? 0) + (prod?.delivery_price ?? 0)) * (b?.too ?? 1)
+          a + ((prod?.price ?? 0) + (prod?.delivery_price ?? 0)) * (Number(b?.too) ?? 1)
         );
       }, 0);
       settotalTulber(temp);
@@ -143,7 +143,7 @@ const AddOrderModal = ({ handleCancel, handleOk, getDataReset, open }: any) => {
                 product_name: prod.name,
                 delivery_price: prod.delivery_price,
                 sale_price: prod.price,
-                too: items.too,
+                too: Number(items.too),
               };
             }),
             total_price: totalTulber,
@@ -158,7 +158,7 @@ const AddOrderModal = ({ handleCancel, handleOk, getDataReset, open }: any) => {
               },
               0
             ),
-            too: order_products?.reduce((a: number, b: any) => a + b?.too, 0),
+            too: order_products?.reduce((a: number, b: any) => a + Number(b?.too), 0),
             jolooch_user: values?.jolooch
               ? JSON.parse(values?.jolooch)?._id
               : null,
