@@ -139,7 +139,7 @@ const EditOrderModal = ({
               },
               0
             ),
-            too: order_products?.reduce((a: number, b: any) => a + b?.too, 0),
+            too: order_products?.reduce((a: number, b: any) => a + Number(b?.too), 0),
             jolooch_user: joloodhtemp?._id,
             jolooch_username: joloodhtemp?.username,
             zone: joloodhtemp?.zone,
