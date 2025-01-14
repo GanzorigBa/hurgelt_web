@@ -310,8 +310,8 @@ const UserDetials = (props?: {
       let temptoo = 0;
       for (let index = 0; index < tableData.length; index++) {
         const element: any = tableData[index];
-        for (let ind = 0; ind < element?.order_products?.length; ind++) {
-          const ddddd: any = element?.order_products[ind];
+        for (let ind = 0; ind < element?.order_product?.length; ind++) {
+          const ddddd: any = element?.order_product[ind];
           temptoo += ddddd?.too;
         }
       }
@@ -438,7 +438,7 @@ const UserDetials = (props?: {
       render: (rec: any, item: any) => {
         return (
           <div className="flex flex-col">
-            {rec?.order_products?.map((baraa: any, index: number) => {
+            {rec?.order_product?.map((baraa: any, index: number) => {
               return (
                 <div key={index}>
                   {baraa?.product_name} ({baraa?.too})
